@@ -62,6 +62,7 @@ type DiffHunk struct {
 	OrigRange  DiffRange
 	NewRange   DiffRange
 	WholeRange DiffRange
+	Comments   map[int][]string
 }
 
 // DiffFile is the sum of diffhunks and holds the changes of the file features
@@ -139,14 +140,19 @@ func Parse(diffString string) (*Diff, error) {
 	var ADDEDCount int
 	var REMOVEDCount int
 	var inHunk bool
+
 	oldFilePrefix := "--- a/"
 	newFilePrefix := "+++ b/"
 
 	var diffPosCount int
+	var diffLineNumber int
 	var firstHunkInFile bool
 	// Parse each line of diff.
 	for idx, l := range lines {
-		diffPosCount++
+		diffLineNumber++
+		if !isCommentLine(l) {
+			diffPosCount++
+		}
 		switch {
 		case strings.HasPrefix(l, "diff "):
 			inHunk = false
@@ -239,6 +245,11 @@ func Parse(diffString string) (*Diff, error) {
 			// (re)set line counts
 			ADDEDCount = hunk.NewRange.Start
 			REMOVEDCount = hunk.OrigRange.Start
+		case inHunk && isCommentLine(l):
+			if hunk.Comments == nil {
+				hunk.Comments = make(map[int][]string)
+			}
+			hunk.Comments[diffPosCount] = append(hunk.Comments[diffPosCount], strings.TrimSpace(l[1:]))
 		case inHunk && isSourceLine(l):
 			m, err := lineMode(l)
 			if err != nil {
@@ -285,10 +296,18 @@ func isSourceLine(line string) bool {
 	if line == `\ No newline at end of file` {
 		return false
 	}
-	if l := len(line); l == 0 || (l >= 3 && (line[:3] == "---" || line[:3] == "+++")) {
+	if l := len(line); l == 0 {
+		return false
+	} else if line[0] == '`' || line[0] == '"' {
+		return false
+	} else if l >= 3 && (line[:3] == "---" || line[:3] == "+++") {
 		return false
 	}
 	return true
+}
+
+func isCommentLine(line string) bool {
+	return len(line) > 0 && line[0] == '#'
 }
 
 // Length returns the hunks line length

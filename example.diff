@@ -55,3 +55,17 @@ index 03b9162..0000000
 @@ -1 +0,0 @@
 -symlink-destination
 \ No newline at end of file
+diff --git a/commented1 b/commented1
+index 504d2a1..50ccec3 100644
+--- a/commented1
++++ b/commented1
+@@ -1,4 +1,4 @@
++add a line
+# comment about adding a line
+ some
+ lines
+# several comment lines
+# about this line
+-in
+# comment about removing a line
+ file1

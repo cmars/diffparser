@@ -19,7 +19,7 @@ func setup(t *testing.T) *Diff {
 
 	diff, err := Parse(string(byt))
 	require.NoError(t, err)
-	require.Equal(t, len(diff.Files), 6)
+	require.Equal(t, len(diff.Files), 7)
 
 	return diff
 }
@@ -134,4 +134,15 @@ func TestHunk(t *testing.T) {
 	for i, line := range expectedNewLines {
 		require.Equal(t, line, *newRange.Lines[i])
 	}
+}
+
+func TestHunkWithComments(t *testing.T) {
+	diff := setup(t)
+	file := diff.Files[6]
+	hunk := file.Hunks[0]
+	require.Equal(t, hunk.Comments, map[int][]string{
+		1: []string{"comment about adding a line"},
+		3: []string{"several comment lines", "about this line"},
+		4: []string{"comment about removing a line"},
+	})
 }
